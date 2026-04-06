@@ -49,6 +49,21 @@ aes.a : aes.o
 
 lib : aes.a
 
+# === FAULT ATTACK: ADDED (HW5) =============================================
+# Build the DFA fault attack binary.
+# Uses a direct gcc invocation to keep it simple and OS-portable.
+# Run with:  make fault && ./fault_attack
+fault_attack.o : fault_attack.c aes.h
+	echo [CC] $@ $(CFLAGS)
+	$(CC) $(CFLAGS) -DECB=1 -o $@ $<
+
+fault_attack.elf : aes.o fault_attack.o
+	echo [LD] $@
+	$(LD) -Wall -Os -o $@ $^
+
+fault : fault_attack.elf
+# === FAULT ATTACK: END =====================================================
+
 clean:
 	rm -f *.OBJ *.LST *.o *.gch *.out *.hex *.map *.elf *.a
 

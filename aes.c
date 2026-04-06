@@ -38,6 +38,19 @@ NOTE:   String length must be evenly divisible by 16byte (str_len % 16 == 0)
 #include <string.h> // CBC mode, for memset
 #include "aes.h"
 
+/* === FAULT ATTACK: ADDED (HW5) ============================================ */
+/* Global variables that control single-bit fault injection into M9           */
+/* (the AES state after AddRoundKey at the end of round 9).                  */
+/*                                                                           */
+/* To use: set g_fault_enable=1, g_fault_byte to the flat byte index (0-15) */
+/* in the state you want to corrupt, and g_fault_bit to the bit (0-7) to    */
+/* flip. After encryption, g_m9_snapshot holds the pre-fault M9 state.      */
+uint8_t g_fault_enable  = 0;  /* 1 = inject fault, 0 = normal operation     */
+uint8_t g_fault_byte    = 0;  /* Flat byte index into M9 state (0-15)       */
+uint8_t g_fault_bit     = 0;  /* Bit position to flip within that byte (0-7)*/
+uint8_t g_m9_snapshot[16];    /* Snapshot of M9 captured BEFORE fault flip  */
+/* === FAULT ATTACK: END ==================================================== */
+
 /*****************************************************************************/
 /* Defines:                                                                  */
 /*****************************************************************************/
@@ -430,6 +443,24 @@ static void Cipher(state_t* state, const uint8_t* RoundKey)
     }
     MixColumns(state);
     AddRoundKey(round, state, RoundKey);
+
+    /* === FAULT ATTACK: ADDED (HW5) ======================================= */
+    /* After round 9's AddRoundKey, the state IS M9 (the output of round 9,  */
+    /* which is the input to the final round). Capture it and optionally      */
+    /* inject a single-bit fault to emulate a hardware glitch.               */
+    if (round == (uint8_t)(Nr - 1))
+    {
+      /* Step 2 (assignment): capture M9 before any fault is applied */
+      memcpy(g_m9_snapshot, (uint8_t*)state, AES_BLOCKLEN);
+
+      /* Step 1 (assignment): inject single-bit fault into the state */
+      if (g_fault_enable)
+      {
+        /* XOR flips bit g_fault_bit of flat byte g_fault_byte in the state */
+        ((uint8_t*)state)[g_fault_byte] ^= (uint8_t)(1u << g_fault_bit);
+      }
+    }
+    /* === FAULT ATTACK: END ================================================ */
   }
   // Add round key to last round
   AddRoundKey(Nr, state, RoundKey);

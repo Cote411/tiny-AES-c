@@ -88,4 +88,16 @@ void AES_CTR_xcrypt_buffer(struct AES_ctx* ctx, uint8_t* buf, size_t length);
 #endif // #if defined(CTR) && (CTR == 1)
 
 
+/* === FAULT ATTACK: ADDED (HW5) ============================================ */
+/* Extern declarations for fault injection globals defined in aes.c.          */
+/* Set g_fault_enable=1 and configure g_fault_byte + g_fault_bit before      */
+/* calling AES_ECB_encrypt() to inject a single-bit fault at the end of      */
+/* round 9 (i.e., into M9, the last-round input state).                      */
+extern uint8_t g_fault_enable;   /* 1 = inject fault, 0 = normal operation   */
+extern uint8_t g_fault_byte;     /* Flat byte index into M9 state (0-15)     */
+extern uint8_t g_fault_bit;      /* Bit position to flip within byte (0-7)   */
+extern uint8_t g_m9_snapshot[16];/* M9 state snapshot captured before fault  */
+/* === FAULT ATTACK: END ==================================================== */
+
+
 #endif // _AES_H_
